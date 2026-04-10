@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global background */
+body {
+  @apply bg-gray-900 text-white;
+}
+* {
+  transition: all 0.15s ease-in-out;
+}
