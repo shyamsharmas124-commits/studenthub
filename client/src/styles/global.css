@@ -1,21 +1,4 @@
-/* reusable classes */
-
-.container-center {
-  @apply flex items-center justify-center min-h-screen;
-}
-
-.card {
-  @apply bg-gray-800 p-6 rounded-2xl shadow-lg;
-}
-
-.input {
-  @apply w-full p-3 mb-4 rounded bg-gray-700 outline-none;
-}
-
-.button-primary {
-  @apply w-full bg-purple-600 hover:bg-purple-700 p-3 rounded font-semibold;
-}
-
-.button-secondary {
-  @apply w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-semibold;
+.container {
+  max-width: 1184px;
+  margin: auto;
 }

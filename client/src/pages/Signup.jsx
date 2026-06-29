@@ -1,85 +1,173 @@
-import { useState } from "react";
-import API from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock, User, UserCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { FormContainer } from '../components/FormContainer';
+import { useAuth } from '../contexts/AuthContext';
 
-export default function Signup() {
-  const [form, setForm] = useState({});
-  const nav = useNavigate();
+export const Signup = () => {
+  const navigate = useNavigate();
+  const { signup } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [errors, setErrors] = useState({});
 
-  const handleSignup = async () => {
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+    }
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Valid email is required';
+    }
+    if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Please fix the errors below');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await API.post("/auth/signup", form);
-      nav("/login");
-    } catch (err) {
-      alert(err.response?.data?.msg || "Signup failed");
+      const { confirmPassword, ...signupData } = formData;
+      const response = await signup(signupData);
+      
+      toast.success('Account created successfully! Please login.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1000);
+    } catch (error) {
+      const errorMsg = error.msg || error.message || 'Signup failed';
+      toast.error(errorMsg);
+      console.error('Signup error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* LEFT SIDE (Branding) */}
-      <div className="w-1/2 bg-purple-600 text-white flex flex-col justify-center p-16">
-        <h1 className="text-5xl font-bold mb-6">
-          Learn. Teach. Grow.
-        </h1>
+    <FormContainer
+      title="Create Account"
+      subtitle="Join StudentHub and start learning today!"
+      onSubmit={handleSubmit}
+    >
+      <Input
+        label="Full Name"
+        type="text"
+        name="name"
+        placeholder="John Doe"
+        value={formData.name}
+        onChange={handleChange}
+        error={errors.name}
+        required
+        icon={User}
+      />
 
-        <p className="text-lg opacity-90">
-          Join StudentHub — where students become teachers
-          and share knowledge with the world.
+      <Input
+        label="Username"
+        type="text"
+        name="username"
+        placeholder="johndoe"
+        value={formData.username}
+        onChange={handleChange}
+        error={errors.username}
+        required
+        icon={UserCheck}
+      />
+
+      <Input
+        label="Email"
+        type="email"
+        name="email"
+        placeholder="john@example.com"
+        value={formData.email}
+        onChange={handleChange}
+        error={errors.email}
+        required
+        icon={Mail}
+      />
+
+      <Input
+        label="Password"
+        type="password"
+        name="password"
+        placeholder="••••••••"
+        value={formData.password}
+        onChange={handleChange}
+        error={errors.password}
+        required
+        icon={Lock}
+      />
+
+      <Input
+        label="Confirm Password"
+        type="password"
+        name="confirmPassword"
+        placeholder="••••••••"
+        value={formData.confirmPassword}
+        onChange={handleChange}
+        error={errors.confirmPassword}
+        required
+        icon={Lock}
+      />
+
+      <Button
+        type="submit"
+        size="lg"
+        loading={loading}
+        disabled={loading}
+      >
+        Create Account
+      </Button>
+
+      <div className="text-center">
+        <p className="text-gray-600">
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-600 hover:underline font-semibold">
+            Login here
+          </Link>
         </p>
       </div>
-
-      {/* RIGHT SIDE (FORM) */}
-      <div className="w-1/2 flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-10 rounded-xl shadow-lg w-[400px]">
-          <h2 className="text-2xl font-bold mb-6 text-center">
-            Create Account
-          </h2>
-
-          <input
-            className="w-full p-3 mb-4 border rounded"
-            placeholder="Name"
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
-          />
-
-          <input
-            className="w-full p-3 mb-4 border rounded"
-            placeholder="Email"
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
-
-          <input
-            type="password"
-            className="w-full p-3 mb-4 border rounded"
-            placeholder="Password"
-            onChange={(e) =>
-              setForm({ ...form, password: e.target.value })
-            }
-          />
-
-          <button
-            onClick={handleSignup}
-            className="w-full bg-purple-600 text-white p-3 rounded font-semibold hover:bg-purple-700"
-          >
-            Sign Up
-          </button>
-
-          {/* 🔥 Login redirect */}
-          <p className="text-sm text-center mt-4">
-            Already a user?{" "}
-            <span
-              className="text-purple-600 cursor-pointer"
-              onClick={() => nav("/login")}
-            >
-              Login here
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
+    </FormContainer>
   );
-}
+};
+
+export default Signup;

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Link as LinkIcon, BookOpen, Layers, BarChart3, FileText, Image } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { Button } from '../components/Button';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import axios from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -20,9 +21,11 @@ const categories = [
 
 const difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
-const AddCourse = () => {
+const EditCourse = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     title: '',
     link: '',
@@ -31,6 +34,31 @@ const AddCourse = () => {
     difficulty: 'BEGINNER',
     thumbnail: '',
   });
+
+  useEffect(() => {
+    fetchCourse();
+  }, [id]);
+
+  const fetchCourse = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`/course/${id}`);
+      const course = res.data;
+      setForm({
+        title: course.title || '',
+        link: course.link || '',
+        category: course.category || '',
+        description: course.description || '',
+        difficulty: course.difficulty || 'BEGINNER',
+        thumbnail: course.thumbnail || '',
+      });
+    } catch (error) {
+      toast.error('Failed to load course');
+      navigate('/teacher-dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -45,40 +73,46 @@ const AddCourse = () => {
     }
 
     try {
-      setLoading(true);
-      const res = await axios.post('/course', form);
-      const lessonMsg = res.data.lessonCount
-        ? ` with ${res.data.lessonCount} video checkpoints`
-        : '';
-      toast.success(`Course published${lessonMsg}. Quiz auto-generated.`, { duration: 5000 });
+      setSaving(true);
+      await axios.patch(`/course/${id}`, form);
+      toast.success('Course updated successfully!');
       navigate('/teacher-dashboard');
     } catch (error) {
-      toast.error(error.response?.data?.msg || 'Failed to create course');
+      toast.error(error.response?.data?.msg || 'Failed to update course');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
+  }
+
   return (
-    <div className="sh-page">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       <Navbar />
 
-      <div className="sh-container max-w-2xl py-8">
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12">
+        {/* Header */}
         <button
           onClick={() => navigate('/teacher-dashboard')}
-          className="flex items-center gap-2 text-sm sh-muted hover:text-[#1c1d1f] mb-6"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition mb-8"
         >
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={20} />
+          Back to Dashboard
         </button>
 
-        <h1 className="sh-heading text-3xl mb-1">Create a course</h1>
-        <p className="sh-muted mb-2">Paste a YouTube playlist or resource link — we'll build checkpoints and a quiz for you.</p>
-        <p className="text-xs sh-muted mb-8 border-l-2 border-[#5624d0] pl-3">
-          After you add API keys in <code className="text-[11px] bg-[#f7f9fa] px-1">server/.env</code>, restart the server.
-          Check status at <code className="text-[11px] bg-[#f7f9fa] px-1">/api/health</code>.
-        </p>
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            Edit Course
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Update your course details
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="sh-card p-6 space-y-5">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 md:p-8 space-y-6">
           {/* Title */}
           <div>
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
@@ -122,8 +156,8 @@ const AddCourse = () => {
               name="link"
               value={form.link}
               onChange={handleChange}
-              placeholder="https://www.youtube.com/playlist?list=..."
-              className="sh-input"
+              placeholder="https://example.com/course"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition bg-gray-50 focus:bg-white"
             />
           </div>
 
@@ -187,8 +221,13 @@ const AddCourse = () => {
 
           {/* Submit */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" variant="primary" size="lg" loading={loading}>
-              {loading ? 'Analyzing link & generating quiz…' : 'Publish course'}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={saving}
+            >
+              Save Changes
             </Button>
             <Button
               variant="secondary"
@@ -204,4 +243,4 @@ const AddCourse = () => {
   );
 };
 
-export default AddCourse;
+export default EditCourse;

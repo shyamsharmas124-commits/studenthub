@@ -1,9 +1,17 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { LoadingSpinner } from './LoadingSpinner';
 
-export default function ProtectedRoute({ children }) {
-  const token = localStorage.getItem("token");
+export default function ProtectedRoutes({ children }) {
+  const { isAuthenticated, loading } = useAuth();
 
-  if (!token) return <Navigate to="/" />;
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return children;
 }

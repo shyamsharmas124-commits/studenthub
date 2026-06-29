@@ -2,10 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global background */
-body {
-  @apply bg-gray-900 text-white;
+@layer base {
+  :root {
+    --sh-bg: #f5f5f5;
+    --sh-surface: #ffffff;
+    --sh-ink: #1c1d1f;
+    --sh-muted: #6a6f73;
+    --sh-border: #d1d7dc;
+    --sh-accent: #5624d0;
+    --sh-accent-hover: #401b9c;
+    --sh-teal: #0f7c90;
+    --sh-nav: #1c1d1f;
+    --sh-star: #e59819;
+  }
+
+  body {
+    @apply antialiased;
+    background-color: var(--sh-bg);
+    color: var(--sh-ink);
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
 }
-* {
-  transition: all 0.15s ease-in-out;
+
+@layer components {
+  .sh-page {
+    @apply min-h-screen;
+    background-color: var(--sh-bg);
+  }
+
+  .sh-container {
+    @apply max-w-7xl mx-auto px-4 md:px-6;
+  }
+
+  .sh-card {
+    background: var(--sh-surface);
+    border: 1px solid var(--sh-border);
+    @apply shadow-sm;
+  }
+
+  .sh-heading {
+    color: var(--sh-ink);
+    @apply font-bold tracking-tight;
+  }
+
+  .sh-muted {
+    color: var(--sh-muted);
+  }
+
+  .sh-badge {
+    @apply text-xs font-semibold px-2 py-0.5;
+    border: 1px solid var(--sh-border);
+    color: var(--sh-ink);
+    background: var(--sh-surface);
+  }
+
+  .sh-input {
+    @apply w-full px-3 py-2.5 text-sm outline-none;
+    border: 1px solid var(--sh-border);
+    background: var(--sh-surface);
+    color: var(--sh-ink);
+  }
+
+  .sh-input:focus {
+    border-color: var(--sh-accent);
+    box-shadow: 0 0 0 1px var(--sh-accent);
+  }
 }
