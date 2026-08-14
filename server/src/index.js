@@ -13,6 +13,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes')
 const progressRoutes = require('./routes/progressRoutes')
 const notificationRoutes = require('./routes/notificationRoutes')
 const quizRoutes = require('./routes/quizRoutes')
+const rewardRoutes = require('./routes/rewardRoutes')
 
 const app = express();
 const DEFAULT_PORT = 5000;
@@ -38,6 +39,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/quiz", quizRoutes);
+app.use("/api/reward", rewardRoutes);
 
 const errorHandler = require("./middleware/errorHandler");
 app.use(errorHandler);
@@ -47,16 +49,16 @@ function startServer(port, retriesLeft = MAX_PORT_RETRIES) {
 
 	server.on("error", (err) => {
 		const isPortConflict = err.code === "EADDRINUSE";
-		const usingDefaultPort = !process.env.PORT;
+		const usingManagedPort = !process.env.PORT || Number(process.env.PORT) === port;
 
-		if (isPortConflict && usingDefaultPort && retriesLeft > 0) {
+		if (isPortConflict && usingManagedPort && retriesLeft > 0) {
 			const nextPort = port + 1;
 			console.warn(`Port ${port} is busy. Retrying on ${nextPort}...`);
 			startServer(nextPort, retriesLeft - 1);
 			return;
 		}
 
-		console.error("Failed to start server:", err.message);
+		console.error(`Failed to start server on port ${port}:`, err.message);
 		process.exit(1);
 	});
 }

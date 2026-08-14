@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, FileText, AtSign, Shield, Calendar, Edit3, Save, X, Trophy } from 'lucide-react';
+import { Edit3, Save, X, Plus } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { Button } from '../components/Button';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { useAuth } from '../contexts/AuthContext';
 import axios from '../api/axios';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -21,6 +17,22 @@ const Profile = () => {
     bio: '',
     phone: '',
   });
+
+  // Teaching topics (teacher-only, editable independent of individual courses)
+  const [topicsEditing, setTopicsEditing] = useState(false);
+  const [topicsSaving, setTopicsSaving] = useState(false);
+  const [topics, setTopics] = useState([]);
+  const [newTopic, setNewTopic] = useState('');
+
+  // Email change
+  const [emailEditing, setEmailEditing] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailForm, setEmailForm] = useState({ newEmail: '', currentPassword: '' });
+
+  // Password change
+  const [passwordEditing, setPasswordEditing] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
   useEffect(() => {
     fetchProfile();
@@ -37,7 +49,8 @@ const Profile = () => {
         bio: res.data.bio || '',
         phone: res.data.phone || '',
       });
-    } catch (error) {
+      setTopics(res.data.teachingTopics || []);
+    } catch {
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
@@ -80,8 +93,96 @@ const Profile = () => {
     setEditing(false);
   };
 
+  const handleAddTopic = () => {
+    const trimmed = newTopic.trim();
+    if (!trimmed) return;
+    if (topics.includes(trimmed)) {
+      toast.error('That topic is already on your list');
+      return;
+    }
+    setTopics([...topics, trimmed]);
+    setNewTopic('');
+  };
+
+  const handleRemoveTopic = (topic) => {
+    setTopics(topics.filter((t) => t !== topic));
+  };
+
+  const handleSaveTopics = async () => {
+    try {
+      setTopicsSaving(true);
+      const res = await axios.patch('/user/profile', { teachingTopics: topics });
+      setProfile(res.data);
+      setTopics(res.data.teachingTopics || []);
+      setTopicsEditing(false);
+      toast.success('Teaching topics updated!');
+    } catch (error) {
+      toast.error(error.response?.data?.msg || 'Failed to update topics');
+    } finally {
+      setTopicsSaving(false);
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    setEmailForm({ ...emailForm, [e.target.name]: e.target.value });
+  };
+
+  const handleSaveEmail = async () => {
+    if (!emailForm.newEmail || !emailForm.currentPassword) {
+      toast.error('Enter your new email and current password');
+      return;
+    }
+    try {
+      setEmailSaving(true);
+      const res = await axios.patch('/user/email', emailForm);
+      setProfile(res.data);
+      setEmailEditing(false);
+      setEmailForm({ newEmail: '', currentPassword: '' });
+      toast.success('Email updated successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.msg || 'Failed to update email');
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
+  };
+
+  const handleSavePassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Fill in all password fields');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    try {
+      setPasswordSaving(true);
+      await axios.patch('/user/password', { currentPassword, newPassword });
+      setPasswordEditing(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Password updated successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.msg || 'Failed to update password');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   if (loading) {
-    return <LoadingSpinner fullScreen />;
+    return (
+      <div className="profile-notebook min-h-screen flex items-center justify-center">
+        <p className="nb-mono text-sm nb-muted animate-pulse">Turning the page…</p>
+      </div>
+    );
   }
 
   if (!profile) {
@@ -89,125 +190,93 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="profile-notebook min-h-screen">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12">
-        {/* Profile Header Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8">
-          {/* Banner */}
-          <div className="h-32 md:h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
-            <div className="absolute -bottom-12 left-6 md:left-8">
-              <div className="w-24 h-24 rounded-2xl bg-white shadow-lg flex items-center justify-center text-3xl font-bold text-blue-600 border-4 border-white">
-                {profile.avatar ? (
-                  <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-xl object-cover" />
-                ) : (
-                  profile.name?.charAt(0)?.toUpperCase()
-                )}
-              </div>
-            </div>
+      <div className="max-w-4xl mx-auto px-5 md:px-8 py-10 md:py-16">
+        {/* Header — no banner, no card. Avatar + name sit directly on the page. */}
+        <div className="flex flex-col sm:flex-row sm:items-end gap-6 md:gap-8 pb-10 mb-10 nb-divider">
+          <div className="nb-avatar">
+            {profile.avatar ? (
+              <img src={profile.avatar} alt={profile.name} />
+            ) : (
+              profile.name?.charAt(0)?.toUpperCase()
+            )}
           </div>
 
-          {/* Info */}
-          <div className="pt-16 pb-6 px-6 md:px-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{profile.name}</h1>
-                <p className="text-gray-500">@{profile.username}</p>
-              </div>
-              <div className="flex gap-3">
-                {!editing ? (
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={() => setEditing(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit3 size={16} />
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={handleSave}
-                      loading={saving}
-                      className="flex items-center gap-2"
-                    >
-                      <Save size={16} />
-                      Save
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="md"
-                      onClick={handleCancel}
-                      className="flex items-center gap-2"
-                    >
-                      <X size={16} />
-                      Cancel
-                    </Button>
-                  </>
-                )}
-              </div>
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+            <div>
+              <p className="nb-mono text-xs nb-muted mb-1.5">
+                {profile.role === 'TEACHER' ? 'Teacher profile' : 'Student profile'}
+              </p>
+              <h1 className="nb-serif text-4xl md:text-5xl leading-none">{profile.name}</h1>
+              <p className="nb-mono text-xs nb-muted mt-2">@{profile.username}</p>
+            </div>
+
+            <div className="flex items-center gap-5">
+              {!editing ? (
+                <button type="button" className="nb-link-btn" onClick={() => setEditing(true)}>
+                  <Edit3 size={13} />
+                  Edit profile
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="nb-stamp-btn" onClick={handleSave} disabled={saving}>
+                    <Save size={13} />
+                    {saving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button type="button" className="nb-link-btn" onClick={handleCancel}>
+                    <X size={13} />
+                    Cancel
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Profile Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Personal Info Card */}
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <User size={20} className="text-blue-600" />
-              Personal Information
-            </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10 pb-10 mb-10 nb-divider">
+          {/* Personal Info */}
+          <div>
+            <h2 className="nb-mono text-xs nb-muted mb-6">Personal information</h2>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
               {/* Name */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-1">
-                  <User size={14} />
-                  Full Name
-                </label>
+                <label className="nb-mono text-[0.65rem] nb-muted block mb-1">Full name</label>
                 {editing ? (
                   <input
                     type="text"
                     name="name"
                     value={form.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    className="nb-input"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium text-lg">{profile.name}</p>
+                  <p className="text-lg">{profile.name}</p>
                 )}
               </div>
 
               {/* Username */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-1">
-                  <AtSign size={14} />
-                  Username
-                </label>
+                <label className="nb-mono text-[0.65rem] nb-muted block mb-1">Username</label>
                 {editing ? (
                   <input
                     type="text"
                     name="username"
                     value={form.username}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    className="nb-input"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium text-lg">@{profile.username}</p>
+                  <p className="text-lg">@{profile.username}</p>
                 )}
               </div>
 
               {/* Phone */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-1">
-                  <Phone size={14} />
-                  Phone
-                </label>
+                <label className="nb-mono text-[0.65rem] nb-muted block mb-1">Phone</label>
                 {editing ? (
                   <input
                     type="tel"
@@ -215,70 +284,147 @@ const Profile = () => {
                     value={form.phone}
                     onChange={handleChange}
                     placeholder="Add your phone number"
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+                    className="nb-input"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium text-lg">{profile.phone || 'Not provided'}</p>
+                  <p className="text-lg">{profile.phone || <span className="nb-muted">Not provided</span>}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Account Info Card */}
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Shield size={20} className="text-indigo-600" />
-              Account Details
-            </h2>
+          {/* Account Info */}
+          <div>
+            <h2 className="nb-mono text-xs nb-muted mb-6">Account details</h2>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
               {/* Email */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-1">
-                  <Mail size={14} />
-                  Email Address
-                </label>
-                <p className="text-gray-900 font-medium text-lg">{profile.email}</p>
+                <label className="nb-mono text-[0.65rem] nb-muted block mb-1">Email address</label>
+                {!emailEditing ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-lg">{profile.email}</p>
+                    <button type="button" onClick={() => setEmailEditing(true)} className="nb-link-btn">
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-2">
+                    <input
+                      type="email"
+                      name="newEmail"
+                      value={emailForm.newEmail}
+                      onChange={handleEmailChange}
+                      placeholder="New email address"
+                      className="nb-input"
+                    />
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={emailForm.currentPassword}
+                      onChange={handleEmailChange}
+                      placeholder="Current password"
+                      className="nb-input"
+                    />
+                    <div className="flex items-center gap-5 pt-1">
+                      <button type="button" className="nb-stamp-btn" onClick={handleSaveEmail} disabled={emailSaving}>
+                        {emailSaving ? 'Saving…' : 'Save email'}
+                      </button>
+                      <button
+                        type="button"
+                        className="nb-link-btn"
+                        onClick={() => {
+                          setEmailEditing(false);
+                          setEmailForm({ newEmail: '', currentPassword: '' });
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Role */}
+              {/* Password */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-1">
-                  <Shield size={14} />
-                  Role
-                </label>
-                <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold ${
-                  profile.role === 'TEACHER'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {profile.role || 'Not set'}
-                </span>
+                <label className="nb-mono text-[0.65rem] nb-muted block mb-1">Password</label>
+                {!passwordEditing ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-lg">••••••••</p>
+                    <button type="button" onClick={() => setPasswordEditing(true)} className="nb-link-btn">
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-2">
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Current password"
+                      className="nb-input"
+                    />
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="New password (min 8 characters)"
+                      className="nb-input"
+                    />
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Confirm new password"
+                      className="nb-input"
+                    />
+                    <div className="flex items-center gap-5 pt-1">
+                      <button type="button" className="nb-stamp-btn" onClick={handleSavePassword} disabled={passwordSaving}>
+                        {passwordSaving ? 'Saving…' : 'Save password'}
+                      </button>
+                      <button
+                        type="button"
+                        className="nb-link-btn"
+                        onClick={() => {
+                          setPasswordEditing(false);
+                          setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Member Since */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-500 mb-1">
-                  <Calendar size={14} />
-                  Member Since
-                </label>
-                <p className="text-gray-900 font-medium text-lg">
-                  {new Date(profile.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
+              {/* Role + Member Since */}
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <div>
+                  <label className="nb-mono text-[0.65rem] nb-muted block mb-1.5">Role</label>
+                  <span className={`nb-tag ${profile.role === 'TEACHER' ? 'text-[var(--nb-olive-ink)]' : 'text-[var(--nb-rust-ink)]'}`}>
+                    {profile.role || 'Not set'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <label className="nb-mono text-[0.65rem] nb-muted block mb-1.5">Member since</label>
+                  <p className="nb-mono text-xs">
+                    {new Date(profile.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Bio Card — Full Width */}
-          <div className="md:col-span-2 bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText size={20} className="text-green-600" />
-              Bio
-            </h2>
+          {/* Bio — pull-quote, full width */}
+          <div className="md:col-span-2">
+            <h2 className="nb-mono text-xs nb-muted mb-5">Bio</h2>
             {editing ? (
               <textarea
                 name="bio"
@@ -286,47 +432,112 @@ const Profile = () => {
                 onChange={handleChange}
                 placeholder="Tell us about yourself..."
                 rows="4"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition resize-none"
+                className="nb-input resize-none"
               />
+            ) : profile.bio ? (
+              <div className="nb-pullquote">
+                <p className="nb-serif text-xl md:text-2xl leading-relaxed">
+                  <span className="nb-pullquote-text">{profile.bio}</span>
+                </p>
+              </div>
             ) : (
-              <p className="text-gray-700 leading-relaxed text-lg">
-                {profile.bio || 'No bio added yet. Click "Edit Profile" to add one!'}
-              </p>
+              <p className="nb-muted italic">No bio added yet — click "Edit profile" to add one.</p>
             )}
           </div>
 
-          {/* Rewards & Badges Card */}
-          <div className="md:col-span-2 bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Trophy size={20} className="text-yellow-600" />
-              Rewards & Achievements
-            </h2>
-            
+          {/* Teaching Topics — TEACHER only, dashed list not chips */}
+          {profile.role === 'TEACHER' && (
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="nb-mono text-xs nb-muted">What I teach</h2>
+                {!topicsEditing ? (
+                  <button type="button" className="nb-link-btn" onClick={() => setTopicsEditing(true)}>
+                    <Edit3 size={13} />
+                    Edit
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-5">
+                    <button type="button" className="nb-stamp-btn nb-stamp-olive" onClick={handleSaveTopics} disabled={topicsSaving}>
+                      {topicsSaving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      className="nb-link-btn"
+                      onClick={() => {
+                        setTopics(profile.teachingTopics || []);
+                        setTopicsEditing(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                {topics.length === 0 && !topicsEditing && (
+                  <p className="nb-muted italic">No topics added yet — click "Edit" to add what you teach.</p>
+                )}
+                {topics.map((topic) => (
+                  <div key={topic} className="nb-dash-row">
+                    <span className="nb-serif text-lg">{topic}</span>
+                    {topicsEditing && (
+                      <button type="button" onClick={() => handleRemoveTopic(topic)} className="nb-muted hover:text-[var(--nb-rust-ink)]">
+                        <X size={15} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {topicsEditing && (
+                <div className="flex items-center gap-4">
+                  <input
+                    type="text"
+                    value={newTopic}
+                    onChange={(e) => setNewTopic(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTopic();
+                      }
+                    }}
+                    placeholder="e.g. React, Data Structures, Spanish"
+                    className="nb-input flex-1"
+                  />
+                  <button type="button" className="nb-link-btn whitespace-nowrap" onClick={handleAddTopic}>
+                    <Plus size={13} />
+                    Add
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Rewards & Achievements — horizontal timeline, not a badge grid */}
+          <div className="md:col-span-2 pt-10 nb-divider">
+            <h2 className="nb-mono text-xs nb-muted mb-2">Rewards & achievements</h2>
+
             {profile.rewards && profile.rewards.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="nb-timeline">
                 {profile.rewards.map((reward) => (
-                  <div key={reward.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600">
-                      <Trophy size={24} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{reward.badge || 'New Achievement'}</p>
-                      <p className="text-xs text-gray-500">+{reward.points} Points</p>
-                    </div>
+                  <div key={reward.id} className="nb-timeline-stop">
+                    <span className="nb-timeline-dot" />
+                    <p className="nb-serif text-lg leading-snug">
+                      {reward.badge || reward.coupon || 'New achievement'}
+                    </p>
+                    <p className="nb-mono text-[0.65rem] nb-muted mt-1">
+                      {reward.points > 0 ? `+${reward.points} pts` : reward.type}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                <p className="text-gray-500">No achievements yet. Take quizzes to earn badges!</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-4"
-                  onClick={() => navigate('/quizzes')}
-                >
-                  Go to Quiz Center
-                </Button>
+              <div className="py-6">
+                <p className="nb-muted italic mb-3">No achievements yet — take quizzes to earn badges.</p>
+                <button type="button" className="nb-link-btn" onClick={() => navigate('/quizzes')}>
+                  Go to quiz center
+                </button>
               </div>
             )}
           </div>

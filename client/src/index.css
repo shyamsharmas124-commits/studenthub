@@ -68,3 +68,258 @@
     box-shadow: 0 0 0 1px var(--sh-accent);
   }
 }
+
+/* ---------------------------------------------------------------------
+   "Notebook" direction — scoped to .profile-notebook only.
+   Warm paper, rust/olive accent, ink-blot avatar, dashed rules,
+   pull-quote bio, horizontal achievement timeline. Deliberately
+   distinct hex values (not the D97757/#F4F1EA "AI cream" defaults).
+   -------------------------------------------------------------------- */
+@layer components {
+  .profile-notebook {
+    --nb-paper: #ece3cd;
+    --nb-paper-well: #e2d7ba;
+    --nb-ink: #2b2318;
+    --nb-muted: #83745c;
+    --nb-line: #c7b98f;
+    --nb-rust: #a3431d;
+    --nb-rust-ink: #7c3115;
+    --nb-olive: #5b6435;
+    --nb-olive-ink: #444b28;
+    background-color: var(--nb-paper);
+    background-image:
+      radial-gradient(var(--nb-line) 0.6px, transparent 0.6px);
+    background-size: 15px 15px;
+    background-attachment: local;
+    color: var(--nb-ink);
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .nb-serif {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .nb-mono {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .nb-muted {
+    color: var(--nb-muted);
+  }
+
+  .nb-divider {
+    border-bottom: 1px dashed var(--nb-line);
+  }
+
+  /* Signature element: ink-blot / torn-paper avatar */
+  .nb-avatar {
+    width: 5.5rem;
+    height: 5.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--nb-paper-well);
+    color: var(--nb-rust);
+    border: 1.5px solid var(--nb-ink);
+    border-radius: 63% 37% 54% 46% / 46% 55% 45% 54%;
+    transform: rotate(-4deg);
+    box-shadow: 5px 5px 0 var(--nb-rust);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 2rem;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .nb-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: rotate(4deg) scale(1.15);
+  }
+
+  /* Pull-quote bio treatment */
+  .nb-pullquote {
+    position: relative;
+    padding: 0.25rem 0 0.25rem 2.75rem;
+  }
+
+  .nb-pullquote::before {
+    content: '\201C';
+    position: absolute;
+    left: -0.25rem;
+    top: -1.75rem;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 5rem;
+    color: var(--nb-rust);
+    opacity: 0.35;
+    line-height: 1;
+  }
+
+  .nb-pullquote-text {
+    background-image: linear-gradient(transparent 62%, #d9c78f80 62%);
+    display: inline;
+  }
+
+  /* Links styled as underline text actions, not boxed buttons */
+  .nb-link-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--nb-rust-ink);
+    border-bottom: 1px solid transparent;
+    padding-bottom: 1px;
+    transition: border-color 0.15s ease, opacity 0.15s ease;
+    background: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .nb-link-btn:hover {
+    border-color: var(--nb-rust-ink);
+  }
+
+  .nb-link-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Primary action styled as a flat rubber-stamp button */
+  .nb-stamp-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--nb-paper);
+    background: var(--nb-ink);
+    padding: 0.6rem 1.1rem;
+    border: none;
+    box-shadow: 3px 3px 0 var(--nb-rust);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .nb-stamp-btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--nb-rust);
+  }
+
+  .nb-stamp-btn:active:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--nb-rust);
+  }
+
+  .nb-stamp-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .nb-stamp-btn.nb-stamp-olive {
+    box-shadow: 3px 3px 0 var(--nb-olive);
+  }
+  .nb-stamp-btn.nb-stamp-olive:hover:not(:disabled) {
+    box-shadow: 4px 4px 0 var(--nb-olive);
+  }
+  .nb-stamp-btn.nb-stamp-olive:active:not(:disabled) {
+    box-shadow: 1px 1px 0 var(--nb-olive);
+  }
+
+  /* Underline-style inputs, no boxes */
+  .nb-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--nb-line);
+    padding: 0.4rem 0.1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: var(--nb-ink);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .nb-input:focus {
+    border-bottom: 1.5px solid var(--nb-rust);
+  }
+
+  .nb-input::placeholder {
+    color: var(--nb-muted);
+    opacity: 0.8;
+  }
+
+  /* Dashed-list rows for teaching topics */
+  .nb-dash-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px dashed var(--nb-line);
+  }
+
+  .nb-dash-row:last-child {
+    border-bottom: none;
+  }
+
+  /* Role tag — stamped box, not a pill */
+  .nb-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.6rem;
+    border: 1px dashed currentColor;
+    display: inline-block;
+  }
+
+  /* Horizontal achievement timeline */
+  .nb-timeline {
+    display: flex;
+    gap: 2.5rem;
+    overflow-x: auto;
+    padding: 1.5rem 0.25rem 1rem;
+    position: relative;
+  }
+
+  .nb-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 2.15rem;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--nb-line) 60%, transparent 0%);
+    background-size: 8px 1px;
+    background-repeat: repeat-x;
+  }
+
+  .nb-timeline-stop {
+    position: relative;
+    flex: 0 0 auto;
+    width: 9rem;
+    padding-top: 1rem;
+  }
+
+  .nb-timeline-dot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    background: var(--nb-rust);
+    border: 2px solid var(--nb-paper);
+    box-shadow: 0 0 0 1px var(--nb-rust);
+  }
+}

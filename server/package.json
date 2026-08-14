@@ -8,6 +8,7 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:fix": "node scripts/fix-data.js",
+    "db:seed-coupons": "node scripts/seed-coupons.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

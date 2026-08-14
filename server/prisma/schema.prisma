@@ -21,6 +21,9 @@ model User {
   avatar      String?
   phone       String?
 
+  // Subjects a TEACHER currently teaches; editable any time, independent of individual courses
+  teachingTopics String[] @default([])
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -202,6 +205,20 @@ model Reward {
   points      Int      @default(0)
 
   earnedAt    DateTime @default(now())
+}
+
+model SponsoredCoupon {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  sponsor     String   // e.g. "Skillshare", "JetBrains"
+  code        String
+  description String?
+
+  claimed         Boolean  @default(false)
+  claimedByUserId String?  @db.ObjectId
+  claimedAt       DateTime?
+
+  createdAt   DateTime @default(now())
 }
 
 model Notification {
