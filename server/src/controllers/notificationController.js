@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const notify = require("../utils/notify");
 
 // Get user's notifications
 exports.getMyNotifications = async (req, res) => {
@@ -59,13 +60,11 @@ exports.markAllAsRead = async (req, res) => {
 // Helper function to create notification
 exports.createNotification = async (userId, message, type) => {
   try {
-    await prisma.notification.create({
-      data: {
+    await notify({
         userId,
         message,
         type
-      }
-    });
+      });
   } catch (err) {
     console.log("NOTIFICATION ERROR:", err);
   }

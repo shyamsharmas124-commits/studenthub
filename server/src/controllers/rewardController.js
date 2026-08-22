@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const notify = require("../utils/notify");
 
 // Points required before a user is eligible to claim a sponsored coupon.
 // Points currently come from quiz performance (see quizController) but any
@@ -71,12 +72,10 @@ exports.claimCoupon = async (req, res) => {
       },
     });
 
-    await prisma.notification.create({
-      data: {
-        userId: req.user.userId,
-        message: `You claimed a coupon from ${coupon.sponsor}!`,
-        type: "ACHIEVEMENT",
-      },
+    await notify({
+      userId: req.user.userId,
+      message: `You claimed a coupon from ${coupon.sponsor}!`,
+      type: "ACHIEVEMENT",
     });
 
     res.json({

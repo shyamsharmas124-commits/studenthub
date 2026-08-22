@@ -1,7 +1,11 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
 const { logStartupStatus, integrationStatus, missingRequired } = require("./config/env");
+const sanitizeInputs = require("./middleware/sanitizeInputs");
+const { initSocket } = require("./realtime/socket");
+const { startScheduledJobs } = require("./jobs/scheduledJobs");
 
 
 const authRoutes = require('./routes/authRoutes')
@@ -14,6 +18,8 @@ const progressRoutes = require('./routes/progressRoutes')
 const notificationRoutes = require('./routes/notificationRoutes')
 const quizRoutes = require('./routes/quizRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
+const paymentRoutes = require('./routes/paymentRoutes')
+const shareRoutes = require('./routes/shareRoutes')
 
 const app = express();
 const DEFAULT_PORT = 5000;
@@ -21,6 +27,7 @@ const MAX_PORT_RETRIES = 10;
 
 app.use(cors());
 app.use(express.json());
+app.use(sanitizeInputs);
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -40,12 +47,22 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/reward", rewardRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/share", shareRoutes); // crawler-facing pre-rendered course pages, not under /api
 
 const errorHandler = require("./middleware/errorHandler");
 app.use(errorHandler);
 
 function startServer(port, retriesLeft = MAX_PORT_RETRIES) {
-	const server = app.listen(port, ()=> console.log(`Server is running on ${port}`));
+	// Using http.createServer (instead of app.listen directly) so Socket.io can
+	// share the same port as the REST API — no separate port, no client changes needed.
+	const httpServer = http.createServer(app);
+	initSocket(httpServer);
+
+	const server = httpServer.listen(port, () => {
+		console.log(`Server is running on ${port}`);
+		startScheduledJobs();
+	});
 
 	server.on("error", (err) => {
 		const isPortConflict = err.code === "EADDRINUSE";

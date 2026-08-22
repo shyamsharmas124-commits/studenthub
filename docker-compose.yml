@@ -1,0 +1,43 @@
+# Local full-stack dev environment. Does NOT include MongoDB — this project
+# uses MongoDB Atlas (see server/.env DATABASE_URL), which is already a
+# managed cloud service, so there's no local Mongo container to run.
+# Redis IS included here since it's genuinely useful to run locally.
+#
+# Usage:
+#   docker compose up --build
+#   Backend:  http://localhost:5000
+#   Frontend: http://localhost:5173
+#   Redis:    localhost:6379
+
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  server:
+    build: ./server
+    env_file:
+      - ./server/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  client:
+    build: ./client
+    env_file:
+      - ./client/.env
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+
+volumes:
+  redis-data:

@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const notify = require("../utils/notify");
 
 // Create a quiz
 exports.createQuiz = async (req, res) => {
@@ -165,13 +166,11 @@ exports.submitQuiz = async (req, res) => {
           }
         });
 
-        await prisma.notification.create({
-          data: {
+        await notify({
             userId: req.user.userId,
             message: `Achievement Unlocked! You earned the "Master of ${quiz.title}" badge!`,
             type: "ACHIEVEMENT"
-          }
-        });
+          });
       } catch (err) {
         console.log("Reward/Notification error:", err);
       }

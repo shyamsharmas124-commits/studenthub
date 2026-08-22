@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const notify = require("../utils/notify");
 
 // Enroll in a course
 exports.enrollCourse = async (req, res) => {
@@ -46,12 +47,10 @@ exports.enrollCourse = async (req, res) => {
 
     // Notify teacher
     try {
-      await prisma.notification.create({
-        data: {
-          userId: course.teacherId,
-          message: `${user.name} enrolled in your course: ${course.title}`,
-          type: "ENROLLMENT",
-        },
+      await notify({
+        userId: course.teacherId,
+        message: `${user.name} enrolled in your course: ${course.title}`,
+        type: "ENROLLMENT",
       });
     } catch (err) {
       console.log("Notification error:", err);

@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const notify = require("../utils/notify");
 
 // Add review to a course
 exports.addReview = async (req, res) => {
@@ -55,13 +56,11 @@ exports.addReview = async (req, res) => {
     // Notify teacher
     try {
       const student = await prisma.user.findUnique({ where: { id: req.user.userId } });
-      await prisma.notification.create({
-        data: {
+      await notify({
           userId: course.teacherId,
           message: `${student.name} gave a ${rating}-star review to: ${course.title}`,
           type: "REVIEW"
-        }
-      });
+        });
     } catch (err) {
       console.log("Notification error:", err);
     }

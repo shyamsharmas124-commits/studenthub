@@ -1,4 +1,116 @@
 const prisma = require("../utils/prisma");
+const { cacheGet, cacheSet } = require("../utils/cache");
+
+const LEADERBOARD_CACHE_KEY = "analytics:teacher-leaderboard";
+const LEADERBOARD_CACHE_TTL_SECONDS = 30 * 60; // 30 minutes, matches the cron warm-up interval
+
+// Builds the top-teacher leaderboard with a genuine MongoDB aggregation
+// pipeline ($lookup + $group + $sort) run directly against the collections,
+// rather than pulling every row into Node and reducing in JS like
+// getTeacherAnalytics above does. Much cheaper at scale for a "top 10 across
+// everyone" style query, since Mongo does the grouping server-side.
+async function runLeaderboardAggregation() {
+  const pipeline = [
+    {
+      $lookup: {
+        from: "Review",
+        localField: "_id",
+        foreignField: "courseId",
+        as: "reviews",
+      },
+    },
+    {
+      $lookup: {
+        from: "Enrollment",
+        localField: "_id",
+        foreignField: "courseId",
+        as: "enrollments",
+      },
+    },
+    {
+      $group: {
+        _id: "$teacherId",
+        totalCourses: { $sum: 1 },
+        totalViews: { $sum: "$views" },
+        totalEnrollments: { $sum: { $size: "$enrollments" } },
+        allRatings: { $push: "$reviews.rating" },
+      },
+    },
+    {
+      $addFields: {
+        flatRatings: {
+          $reduce: {
+            input: "$allRatings",
+            initialValue: [],
+            in: { $concatArrays: ["$$value", "$$this"] },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        averageRating: {
+          $cond: [
+            { $gt: [{ $size: "$flatRatings" }, 0] },
+            { $round: [{ $avg: "$flatRatings" }, 1] },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "User",
+        localField: "_id",
+        foreignField: "_id",
+        as: "teacher",
+      },
+    },
+    { $unwind: "$teacher" },
+    {
+      $project: {
+        _id: 0,
+        teacherId: { $toString: "$_id" },
+        teacherName: "$teacher.name",
+        teacherUsername: "$teacher.username",
+        totalCourses: 1,
+        totalViews: 1,
+        totalEnrollments: 1,
+        averageRating: 1,
+      },
+    },
+    { $sort: { totalEnrollments: -1, averageRating: -1 } },
+    { $limit: 10 },
+  ];
+
+  const result = await prisma.course.aggregateRaw({ pipeline });
+  return result;
+}
+
+exports.getTeacherLeaderboard = async (req, res) => {
+  try {
+    const cached = await cacheGet(LEADERBOARD_CACHE_KEY);
+    if (cached) {
+      return res.json({ leaderboard: cached, cached: true });
+    }
+
+    const leaderboard = await runLeaderboardAggregation();
+    await cacheSet(LEADERBOARD_CACHE_KEY, leaderboard, LEADERBOARD_CACHE_TTL_SECONDS);
+
+    res.json({ leaderboard, cached: false });
+  } catch (err) {
+    console.log("ERROR:", err);
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+// Called by the cron job in jobs/scheduledJobs.js to keep the cache warm so
+// the first real user request of the window doesn't pay the aggregation cost.
+exports.warmTrendingCache = async () => {
+  const leaderboard = await runLeaderboardAggregation();
+  await cacheSet(LEADERBOARD_CACHE_KEY, leaderboard, LEADERBOARD_CACHE_TTL_SECONDS);
+  return leaderboard;
+};
 
 exports.getTeacherAnalytics = async (req, res) => {
   try {

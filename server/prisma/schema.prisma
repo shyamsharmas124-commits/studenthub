@@ -63,6 +63,11 @@ model Course {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Speeds up GET /course?category=&difficulty= and "my courses" lookups
+  @@index([category])
+  @@index([teacherId])
+  @@index([difficulty])
 }
 
 model Enrollment {
@@ -78,6 +83,9 @@ model Enrollment {
   enrolledAt  DateTime @default(now())
 
   @@unique([studentId, courseId])
+  // The compound unique index above only optimizes studentId-first lookups;
+  // this covers "how many students enrolled in this course" queries
+  @@index([courseId])
 }
 
 model Progress {
@@ -113,6 +121,7 @@ model Review {
   updatedAt   DateTime @updatedAt
 
   @@unique([studentId, courseId])
+  @@index([courseId])
 }
 
 model CourseLesson {
@@ -139,6 +148,7 @@ model CourseView {
   viewedAt  DateTime @default(now())
 
   @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 model Quiz {
@@ -162,6 +172,8 @@ model Quiz {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([courseId])
 }
 
 model QuizAttempt {
@@ -178,6 +190,8 @@ model QuizAttempt {
   percentage     Float
 
   createdAt      DateTime @default(now())
+
+  @@index([userId])
 }
 
 model LearningActivity {
@@ -232,6 +246,9 @@ model Notification {
   read        Boolean  @default(false)
 
   createdAt   DateTime @default(now())
+
+  // The bell icon polls "my unread notifications" constantly — this is the hottest query in the app
+  @@index([userId, read])
 }
 
 enum Role {
