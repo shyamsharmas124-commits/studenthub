@@ -1,7 +1,43 @@
 # JavaScript Fundamentals — Applied in This Codebase
 
-Quick reference tying event loop / hoisting / promises-vs-callbacks to real
-code in this repo, for onboarding or interview prep.
+Quick reference tying closures / event loop / hoisting / promises-vs-callbacks
+to real code in this repo, for onboarding or interview prep.
+
+## Closures
+
+A closure is a function bundled with the variables from its surrounding
+scope, which it keeps access to even after that outer scope has finished
+running. `server/src/utils/cache.js` is the clearest example in this repo:
+
+```js
+const memoryStore = new Map();
+let redisClient = null;
+let redisReady = false;
+
+function getRedis() { /* reads/writes redisClient, redisReady */ }
+
+async function cacheGet(key) { /* reads memoryStore, calls getRedis() */ }
+async function cacheSet(key, value, ttlSeconds = 300) { /* writes memoryStore */ }
+async function cacheDel(key) { /* writes memoryStore */ }
+
+module.exports = { cacheGet, cacheSet, cacheDel };
+```
+
+`memoryStore`, `redisClient`, and `redisReady` are declared once, at module
+load time, in `cache.js`'s top-level scope. `cacheGet`/`cacheSet`/`cacheDel`
+are the only functions exported — callers elsewhere in the app (e.g.
+`courseController.js` caching a course listing) can invoke them, but have no
+way to reach `memoryStore` or `redisClient` directly. Each of those three
+functions "closes over" the same shared variables, so they all read and
+write one consistent cache state, while everything outside the file sees
+only the public `cacheGet`/`cacheSet`/`cacheDel` API. This is the module
+pattern: closures are what make true "private" state possible in
+JavaScript, since there's no `private` keyword for top-level variables.
+
+Contrast this with a version that *doesn't* use a closure — passing the
+store around as a plain parameter — and the privacy disappears: any caller
+that receives `memoryStore` can mutate it directly, bypassing the
+expiry-check logic in `cacheGet`.
 
 ## Promises vs. callbacks
 
