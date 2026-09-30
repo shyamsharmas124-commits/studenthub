@@ -25,8 +25,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 function App() {
   return (
     <AuthProvider>
-      <ErrorBoundary>
       <BrowserRouter>
+        <ErrorBoundary>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
@@ -143,8 +143,8 @@ function App() {
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
-      </ErrorBoundary>
       <Toaster position="top-center" />
     </AuthProvider>
   );

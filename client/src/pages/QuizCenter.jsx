@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Brain, Trophy, ChevronRight, ChevronLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { Button } from '../components/Button';
@@ -8,7 +8,6 @@ import axios from '../api/axios';
 import toast from 'react-hot-toast';
 
 const QuizCenter = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startQuizId = searchParams.get('quiz');
   const [loading, setLoading] = useState(true);
@@ -19,17 +18,6 @@ const QuizCenter = () => {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
-
-  useEffect(() => {
-    fetchQuizzes();
-    fetchLeaderboard();
-  }, []);
-
-  useEffect(() => {
-    if (startQuizId && !activeQuiz) {
-      startQuiz(startQuizId);
-    }
-  }, [startQuizId]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -45,7 +33,7 @@ const QuizCenter = () => {
       setLoading(true);
       const res = await axios.get('/quiz');
       setQuizzes(res.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load quizzes');
     } finally {
       setLoading(false);
@@ -60,12 +48,23 @@ const QuizCenter = () => {
       setUserAnswers(new Array(res.data.questions.length).fill(null));
       setCurrentQuestionIndex(0);
       setResult(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to start quiz');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchQuizzes();
+    fetchLeaderboard();
+  }, []);
+
+  useEffect(() => {
+    if (startQuizId && !activeQuiz) {
+      startQuiz(startQuizId);
+    }
+  }, [startQuizId]);
 
   const handleAnswerSelect = (optionIndex) => {
     const updatedAnswers = [...userAnswers];
@@ -87,7 +86,7 @@ const QuizCenter = () => {
         toast.success('Perfect Score! Achievement Unlocked!', { icon: '🏆' });
       }
       fetchLeaderboard();
-    } catch (error) {
+    } catch {
       toast.error('Failed to submit quiz');
     } finally {
       setSubmitting(false);

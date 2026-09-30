@@ -11,24 +11,23 @@ const TeacherAnalytics = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
-  const [activeCourseIndex, setActiveCourseIndex] = useState(0);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
       const res = await axios.get('/analytics/teacher');
       setStats(res.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load analytics data');
       navigate('/teacher-dashboard');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
 
   if (loading) {
     return <LoadingSpinner fullScreen />;

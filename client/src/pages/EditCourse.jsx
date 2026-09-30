@@ -35,10 +35,6 @@ const EditCourse = () => {
     thumbnail: '',
   });
 
-  useEffect(() => {
-    fetchCourse();
-  }, [id]);
-
   const fetchCourse = async () => {
     try {
       setLoading(true);
@@ -52,13 +48,17 @@ const EditCourse = () => {
         difficulty: course.difficulty || 'BEGINNER',
         thumbnail: course.thumbnail || '',
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to load course');
       navigate('/teacher-dashboard');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCourse();
+  }, [id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

@@ -25,21 +25,54 @@ function oid(id) {
 
 (async () => {
   try {
-    // Fix users missing username
+    // 1. Fix users missing username or timestamps
     const badUsers = await rawFind("User", {
-      $or: [{ username: null }, { username: { $exists: false } }],
+      $or: [
+        { username: null },
+        { username: { $exists: false } },
+        { createdAt: null },
+        { createdAt: { $exists: false } },
+        { updatedAt: null },
+        { updatedAt: { $exists: false } },
+      ],
     });
+
     for (const user of badUsers) {
       const id = user._id.$oid || String(user._id);
       const base =
         user.email?.split("@")[0]?.replace(/[^a-zA-Z0-9_]/g, "") ||
         user.name?.replace(/\s+/g, "").toLowerCase() ||
         "user";
-      await rawUpdate("User", { _id: oid(user._id) }, { username: `${base}_${id.slice(-6)}` });
-    }
-    console.log(`Users fixed (username): ${badUsers.length}`);
+      const username = user.username || `${base}_${id.slice(-6)}`;
 
-    // Fix courses missing timestamps
+      const created =
+        user.createdAt && !Number.isNaN(new Date(user.createdAt.$date || user.createdAt).getTime())
+          ? new Date(user.createdAt.$date || user.createdAt)
+          : now;
+      const updated =
+        user.updatedAt && !Number.isNaN(new Date(user.updatedAt.$date || user.updatedAt).getTime())
+          ? new Date(user.updatedAt.$date || user.updatedAt)
+          : created;
+
+      await prisma.$runCommandRaw({
+        update: "User",
+        updates: [
+          {
+            q: { _id: oid(user._id) },
+            u: {
+              $set: {
+                username,
+                createdAt: { $date: created.toISOString() },
+                updatedAt: { $date: updated.toISOString() },
+              },
+            },
+          },
+        ],
+      });
+    }
+    console.log(`Users checked & fixed: ${badUsers.length}`);
+
+    // 2. Fix courses missing timestamps
     const badCourses = await rawFind("Course", {
       $or: [
         { createdAt: null },
@@ -50,12 +83,12 @@ function oid(id) {
     });
     for (const course of badCourses) {
       const created =
-        course.createdAt && !Number.isNaN(new Date(course.createdAt).getTime())
-          ? new Date(course.createdAt)
+        course.createdAt && !Number.isNaN(new Date(course.createdAt.$date || course.createdAt).getTime())
+          ? new Date(course.createdAt.$date || course.createdAt)
           : now;
       const updated =
-        course.updatedAt && !Number.isNaN(new Date(course.updatedAt).getTime())
-          ? new Date(course.updatedAt)
+        course.updatedAt && !Number.isNaN(new Date(course.updatedAt.$date || course.updatedAt).getTime())
+          ? new Date(course.updatedAt.$date || course.updatedAt)
           : created;
 
       await prisma.$runCommandRaw({
@@ -74,16 +107,48 @@ function oid(id) {
         ],
       });
     }
-    console.log(`Courses fixed (timestamps): ${badCourses.length}`);
+    console.log(`Courses checked & fixed: ${badCourses.length}`);
 
-    // Verify
-    const courses = await prisma.course.findMany({
-      include: {
-        teacher: { select: { id: true, name: true, username: true } },
-        _count: { select: { enrollments: true, reviews: true } },
-      },
-      take: 5,
-    });
+    // 3. Fix other collections with missing timestamps
+    const collectionsWithCreated = [
+      "Enrollment",
+      "Review",
+      "Quiz",
+      "QuizAttempt",
+      "Notification",
+      "Reward",
+      "SponsoredCoupon",
+      "CourseLesson",
+      "CourseView",
+      "LearningActivity",
+    ];
+
+    for (const col of collectionsWithCreated) {
+      try {
+        const docs = await rawFind(col, {
+          $or: [{ createdAt: null }, { createdAt: { $exists: false } }],
+        });
+        for (const doc of docs) {
+          await prisma.$runCommandRaw({
+            update: col,
+            updates: [
+              {
+                q: { _id: oid(doc._id) },
+                u: { $set: { createdAt: { $date: now.toISOString() } } },
+              },
+            ],
+          });
+        }
+        if (docs.length > 0) console.log(`${col} fixed: ${docs.length}`);
+      } catch (err) {
+        // collection might not have records yet, continue
+      }
+    }
+
+    // Verify User and Course queries
+    const users = await prisma.user.findMany({ take: 5 });
+    console.log("Verify OK — sample users:", users.length);
+    const courses = await prisma.course.findMany({ take: 5 });
     console.log("Verify OK — sample courses:", courses.length);
   } catch (e) {
     console.error("Fix failed:", e.message);

@@ -7,6 +7,8 @@ import { Button } from '../components/Button';
 import axios from '../api/axios';
 import toast from 'react-hot-toast';
 
+import DashboardSkeleton from '../components/DashboardSkeleton';
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -105,6 +107,15 @@ const Dashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="sh-page">
+        <Navbar />
+        <DashboardSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="sh-page">
       <Navbar />
@@ -154,13 +165,7 @@ const Dashboard = () => {
             </Button>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="bg-gray-200 rounded-2xl h-72 animate-pulse"></div>
-              ))}
-            </div>
-          ) : dashboardData.enrolledCourses.length > 0 ? (
+          {dashboardData.enrolledCourses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {dashboardData.enrolledCourses.map(course => (
                 <div

@@ -4,6 +4,26 @@ import { Menu, X, LogOut, User, BookOpen, Bell, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../api/axios';
 
+const NotificationPanel = ({ notifications, onMarkAsRead }) => (
+  <div className="max-h-80 overflow-y-auto">
+    {notifications.length > 0 ? (
+      notifications.map(n => (
+        <div
+          key={n.id}
+          onClick={() => onMarkAsRead(n.id)}
+          className={`px-4 py-3 border-b border-white/10 cursor-pointer text-sm ${
+            !n.read ? 'bg-white/5' : ''
+          }`}
+        >
+          <p className={!n.read ? 'text-white font-medium' : 'text-gray-300'}>{n.message}</p>
+        </div>
+      ))
+    ) : (
+      <p className="px-4 py-8 text-center text-gray-400 text-sm">No notifications</p>
+    )}
+  </div>
+);
+
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -12,26 +32,30 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      const interval = setInterval(fetchNotifications, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
+    if (!user) return;
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get('/notification');
-      setNotifications(res.data);
-    } catch {
-      // silent
-    }
-  };
+    let isMounted = true;
+    const loadNotifications = async () => {
+      try {
+        const res = await axios.get('/notification');
+        if (isMounted) setNotifications(res.data);
+      } catch {
+        // silent
+      }
+    };
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 60000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const markAsRead = async (id) => {
     try {
       await axios.patch(`/notification/${id}`);
-      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     } catch {
       // silent
     }
@@ -40,7 +64,7 @@ const Navbar = () => {
   const markAllAsRead = async () => {
     try {
       await axios.patch('/notification/read-all');
-      setNotifications(notifications.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch {
       // silent
     }
@@ -59,26 +83,6 @@ const Navbar = () => {
     setMobileMenuOpen(false);
     setShowNotifications(false);
   };
-
-  const NotificationPanel = () => (
-    <div className="max-h-80 overflow-y-auto">
-      {notifications.length > 0 ? (
-        notifications.map(n => (
-          <div
-            key={n.id}
-            onClick={() => markAsRead(n.id)}
-            className={`px-4 py-3 border-b border-white/10 cursor-pointer text-sm ${
-              !n.read ? 'bg-white/5' : ''
-            }`}
-          >
-            <p className={!n.read ? 'text-white font-medium' : 'text-gray-300'}>{n.message}</p>
-          </div>
-        ))
-      ) : (
-        <p className="px-4 py-8 text-center text-gray-400 text-sm">No notifications</p>
-      )}
-    </div>
-  );
 
   return (
     <nav className="bg-[#1c1d1f] text-white sticky top-0 z-50 border-b border-black/20">
@@ -150,7 +154,7 @@ const Navbar = () => {
                         Mark all read
                       </button>
                     </div>
-                    <NotificationPanel />
+                    <NotificationPanel notifications={notifications} onMarkAsRead={markAsRead} />
                   </div>
                 )}
               </div>
@@ -187,7 +191,7 @@ const Navbar = () => {
               <span className="text-sm font-bold">Notifications</span>
               <button onClick={markAllAsRead} className="text-xs text-[#cec0fc]">Mark all read</button>
             </div>
-            <NotificationPanel />
+            <NotificationPanel notifications={notifications} onMarkAsRead={markAsRead} />
           </div>
         )}
 

@@ -24,8 +24,8 @@ model User {
   // Subjects a TEACHER currently teaches; editable any time, independent of individual courses
   teachingTopics String[] @default([])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   // Relations
   coursesTaught    Course[]
@@ -61,8 +61,8 @@ model Course {
 
   views       Int      @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   // Speeds up GET /course?category=&difficulty= and "my courses" lookups
   @@index([category])
@@ -80,7 +80,7 @@ model Enrollment {
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   bookmarked  Boolean  @default(false)
-  enrolledAt  DateTime @default(now())
+  enrolledAt  DateTime? @default(now())
 
   @@unique([studentId, courseId])
   // The compound unique index above only optimizes studentId-first lookups;
@@ -100,7 +100,7 @@ model Progress {
   completionPercentage Int @default(0)
   lessonsCompleted Int @default(0)
   completedLessonIds String @default("[]")
-  lastAccessedAt DateTime @updatedAt
+  lastAccessedAt DateTime? @updatedAt
 
   @@unique([studentId, courseId])
 }
@@ -117,8 +117,8 @@ model Review {
   courseId    String   @db.ObjectId
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   @@unique([studentId, courseId])
   @@index([courseId])
@@ -135,7 +135,7 @@ model CourseLesson {
   videoUrl  String?
   duration  String?
 
-  createdAt DateTime @default(now())
+  createdAt DateTime? @default(now())
 }
 
 model CourseView {
@@ -145,7 +145,7 @@ model CourseView {
   courseId  String   @db.ObjectId
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  viewedAt  DateTime @default(now())
+  viewedAt  DateTime? @default(now())
 
   @@unique([userId, courseId])
   @@index([courseId])
@@ -170,8 +170,8 @@ model Quiz {
 
   attempts    QuizAttempt[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   @@index([courseId])
 }
@@ -189,7 +189,7 @@ model QuizAttempt {
   totalQuestions Int
   percentage     Float
 
-  createdAt      DateTime @default(now())
+  createdAt      DateTime? @default(now())
 
   @@index([userId])
 }
@@ -202,7 +202,7 @@ model LearningActivity {
 
   date      String
 
-  createdAt DateTime @default(now())
+  createdAt DateTime? @default(now())
 
   @@unique([userId, date])
 }
@@ -218,7 +218,7 @@ model Reward {
   coupon      String?
   points      Int      @default(0)
 
-  earnedAt    DateTime @default(now())
+  earnedAt    DateTime? @default(now())
 }
 
 model SponsoredCoupon {
@@ -232,7 +232,7 @@ model SponsoredCoupon {
   claimedByUserId String?  @db.ObjectId
   claimedAt       DateTime?
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime? @default(now())
 }
 
 model Notification {
@@ -245,7 +245,7 @@ model Notification {
   type        NotificationType
   read        Boolean  @default(false)
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime? @default(now())
 
   // The bell icon polls "my unread notifications" constantly — this is the hottest query in the app
   @@index([userId, read])

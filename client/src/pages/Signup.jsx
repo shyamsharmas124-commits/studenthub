@@ -67,8 +67,8 @@ export const Signup = () => {
 
     setLoading(true);
     try {
-      const { confirmPassword, ...signupData } = formData;
-      const response = await signup(signupData);
+      const { confirmPassword: _confirmPassword, ...signupData } = formData;
+      await signup(signupData);
       
       toast.success('Account created successfully! Please login.');
       setTimeout(() => {

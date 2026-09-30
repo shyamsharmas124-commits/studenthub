@@ -47,7 +47,7 @@ exports.renderCoursePage = async (req, res) => {
       : null;
 
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-    const spaUrl = `${clientUrl}/course/${id}`;
+    const spaUrl = `${clientUrl}/courses/${id}`;
     const title = escapeHtml(course.title);
     const description = escapeHtml(
       course.description || `Learn ${course.category} (${course.difficulty}) on StudentHub, taught by ${course.teacher?.name || "a StudentHub teacher"}.`

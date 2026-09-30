@@ -12,21 +12,21 @@ const TeacherQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [quizzes, setQuizzes] = useState([]);
 
-  useEffect(() => {
-    fetchQuizzes();
-  }, []);
-
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
       const res = await axios.get('/quiz/teacher');
       setQuizzes(res.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load your quizzes');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
 
   const handleDeleteQuiz = async (id) => {
     if (!window.confirm('Are you sure you want to delete this quiz?')) return;
@@ -35,7 +35,7 @@ const TeacherQuizzes = () => {
       await axios.delete(`/quiz/${id}`);
       setQuizzes(quizzes.filter(q => q.id !== id));
       toast.success('Quiz deleted successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete quiz');
     }
   };

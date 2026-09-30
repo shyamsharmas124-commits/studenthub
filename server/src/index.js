@@ -38,6 +38,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.get("/api/ping", (req, res) => res.status(200).send("pong"));
 app.use("/api/user", userRoutes);
 app.use("/api/course", courseRoutes);
 app.use("/api/enrollment", enrollmentRoutes);

@@ -72,7 +72,7 @@ const TeacherDashboard = () => {
         ...prev,
         totalCourses: prev.totalCourses - 1
       }));
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete course');
     }
   };
