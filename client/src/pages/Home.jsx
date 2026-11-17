@@ -82,7 +82,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-6 md:px-16 py-16 md:py-32">
+      <div className="relative overflow-hidden bg-gradient-to-br from-deepTeal via-white to-softAmber px-6 md:px-16 py-16 md:py-32">
         {/* Decorative elements */}
         <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-br from-blue-200 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div className="absolute bottom-0 right-10 w-72 h-72 bg-gradient-to-br from-indigo-200 to-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
@@ -121,15 +121,15 @@ export default function Home() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-200">
               <div>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900">10K+</p>
+                <p className="text-2xl md:text-3xl font-bold text-deepTeal">—</p>
                 <p className="text-gray-600 text-sm">Active Students</p>
               </div>
               <div>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900">500+</p>
+                <p className="text-2xl md:text-3xl font-bold text-deepTeal">—</p>
                 <p className="text-gray-600 text-sm">Courses</p>
               </div>
               <div>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900">1K+</p>
+                <p className="text-2xl md:text-3xl font-bold text-deepTeal">—</p>
                 <p className="text-gray-600 text-sm">Teachers</p>
               </div>
             </div>
